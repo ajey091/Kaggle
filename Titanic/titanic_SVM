@@ -1,0 +1,52 @@
+from sklearn.svm import SVR
+import pandas as pd
+import statsmodels.api as sm
+import pylab as pl
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import train_test_split
+
+
+data_train = pd.read_csv('/Users/b119user/Google Drive/Kaggle/train.csv',na_filter=0)
+data_train
+data_test = pd.read_csv('/Users/b119user/Google Drive/Kaggle/test.csv',na_filter=0)
+data_test
+
+data_test["Fare"] = pd.to_numeric(data_test["Fare"], errors='coerce')
+data_train["Age"] = pd.to_numeric(data_train["Age"], errors='coerce')
+data_test["Age"] = pd.to_numeric(data_test["Age"], errors='coerce')
+
+ktrain = np.zeros(len(data_train["Sex"]))
+Age2_train = data_train["Age"]
+Age2_train[data_train["Age"].isnull()] = 30
+ktrain[data_train['Sex']=='female'] = 2
+ktrain[ktrain==0] = 1
+data_train["Sexint"] = ktrain
+data_train["Age2"]  = Age2_train
+
+
+ktest = np.zeros(len(data_test["Sex"]))
+ktest[data_test['Sex']=='female'] = 2
+ktest[ktest==0] = 1
+Age2_test = data_test["Age"]
+Age2_test[data_test["Age"].isnull()] = 30
+data_test["Sexint"] = ktest
+data_test["Age2"]  = Age2_test
+
+cols = ["Pclass","Sexint"]
+X_train = data_train[cols]
+X_train.dropna()
+y_train = data_train["Survived"]
+X_test = data_test[cols]
+X_test.dropna()
+
+svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
+# svr_lin = SVR(kernel='linear', C=1e3)
+# svr_poly = SVR(kernel='poly', C=1e3, degree=2)
+y_rbf = svr_rbf.fit(X_train, y_train).predict(X_test)
+y_rbf[y_rbf<0.5] = 0
+y_rbf[y_rbf>=0.5] = 1
+
+file1=open('PredictedSurvival_svm.txt','w')
+np.savetxt('PredictedSurvival_svm.txt',y_rbf,fmt='%d')
